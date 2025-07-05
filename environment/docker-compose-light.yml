@@ -1,0 +1,213 @@
+version: '3.8'
+
+networks:
+  binghe-network:
+    driver: bridge
+
+volumes:
+  prometheus_data: { }
+services:
+  mysql:
+    image: mysql:8.0.32
+    container_name: mysql
+    volumes:
+      - ./data/db_data:/var/lib/mysql
+      - ./config/mysql/init:/docker-entrypoint-initdb.d/
+    command: [
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci',
+      '--default-time-zone=+8:00',
+      '--default-authentication-plugin=mysql_native_password'
+    ]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: seckill
+      MYSQL_USER: binghe
+      MYSQL_PASSWORD: binghe
+    ports:
+      - 3306:3306
+    networks:
+      - binghe-network
+
+  redis:
+    container_name: redis
+    image: redis:alpine3.21
+    ports:
+      - 6379:6379
+    networks:
+      - binghe-network
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: spryker/redis-commander:0.8.0
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - 8082:8081
+    networks:
+      - binghe-network
+  rmqnamesrv:
+    image: apache/rocketmq:5.3.1
+    container_name: rmqnamesrv
+    ports:
+      - 9876:9876
+    volumes:
+      - ./data/rocketmq/logs:/home/rocketmq/logs
+      - ./data/rocketmq/store:/home/rocketmq/store
+    command: sh mqnamesrv
+    networks:
+      - binghe-network
+  rmqbroker:
+    image: apache/rocketmq:5.3.1
+    container_name: rmqbroker
+    ports:
+      - 10909:10909
+      - 10911:10911
+      - 10912:10912
+    volumes:
+      - ./data/rocketmq/logs:/home/rocketmq/logs
+      - ./data/rocketmq/store:/home/rocketmq/store
+      - ./config/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.3.1/conf/broker.conf
+    command: sh mqbroker -n rmqnamesrv:9876 -c ../conf/broker.conf
+    depends_on:
+      - rmqnamesrv
+    environment:
+      - JAVA_HOME=/usr/lib/jvm/jre
+    networks:
+      - binghe-network
+
+  elasticsearch:
+    image: elasticsearch:7.14.2
+    container_name: elasticsearch
+    volumes:
+      - ./config/elk/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      discovery.type: single-node
+    networks:
+      - binghe-network
+
+  logstash:
+    image: logstash:7.14.2
+    container_name: logstash
+    volumes:
+      - ./config/elk/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./config/elk/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5044:5044"
+      - "5001:5000/tcp"
+      - "5001:5000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - binghe-network
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: kibana:7.14.2
+    container_name: kibana
+    volumes:
+      - ./config/elk/kibana.yml:/usr/share/kibana/config/kibana.yml
+    ports:
+      - "5601:5601"
+    networks:
+      - binghe-network
+    depends_on:
+      - elasticsearch
+
+  sentinel:
+    image: bladex/sentinel-dashboard:latest
+    container_name: sentinel
+    ports:
+      - 8858:8858
+    networks:
+      - binghe-network
+
+  nacos:
+    image: nacos/nacos-server:v2.1.1-slim
+    container_name: nacos
+    networks:
+      - binghe-network
+    ports:
+      - 8848:8848
+      - 9848:9848
+      - 9849:9849
+    # 重启策略
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 386M
+        reservations:
+          memory: 386M
+    environment:
+      TZ: Asia/Shanghai
+      MODE: standalone
+      SPRING_DATASOURCE_PLATFORM: mysql
+      MYSQL_SERVICE_HOST: mysql
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_USER: root
+      MYSQL_SERVICE_PASSWORD: root
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+      JVM_XMS: 256m
+      JVM_XMX: 256m
+      JVM_XMN: 16m
+    volumes:
+      - ./logs/:/home/nacos/logs
+
+  rocketmqConsole:
+    image: candice0630/rocketmq-console-ng:2.0
+    container_name: rocketmqConsole
+    depends_on:
+      - rmqnamesrv
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rmqnamesrv:9876 -Drocketmq.config.isVIPChannel=false -Dcom.rocketmq.sendMessageWithVIPChannel=false"
+    ports:
+      - 19876:8080
+    networks:
+      - binghe-network
+
+  # rabbitmq
+  # 账密 admin/admin
+  # rabbitmq-plugins enable rabbitmq_management
+  rabbitmq:
+    image: rabbitmq:3.12.0-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    command: rabbitmq-server
+    volumes:
+      - /opt/rabbitmq/data:/var/lib/rabbitmq
+    networks:
+      - binghe-network
+
+  # http://127.0.0.1:9090/xxl-job-admin admin/123456 - 安装后稍等会访问即可
+  # 官网镜像为 xuxueli/xxl-job-admin:2.4.1 但不支持ARM架构【需要自己打包】，所以找了一个 kuschzzp/xxl-job-aarch64:2.4.0 镜像支持 AMD/ARM
+  xxl-job-admin:
+    image: kuschzzp/xxl-job-aarch64:2.4.0 #M1 Mac 更换镜像 kuschzzp/xxl-job-aarch64:2.4.0
+    container_name: xxl-job-admin
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - "9090:9090"
+    links:
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/xxl_job?serverTimezone=UTC&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SERVER_PORT=9090
+    networks:
+      - binghe-network
