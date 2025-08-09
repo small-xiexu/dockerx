@@ -2,6 +2,7 @@ version: '3.8'
 
 networks:
   binghe-network:
+    name: binghe-network
     driver: bridge
 
 volumes:
@@ -21,9 +22,6 @@ services:
     ]
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: seckill
-      MYSQL_USER: binghe
-      MYSQL_PASSWORD: binghe
     ports:
       - 3306:3306
     networks:
@@ -120,14 +118,14 @@ services:
       - binghe-network
 
   nacos:
-    image: nacos/nacos-server:v2.1.1-slim
+    image: nacos/nacos-server:v2.3.1-slim
     container_name: nacos
-    networks:
-      - binghe-network
     ports:
       - 8848:8848
       - 9848:9848
       - 9849:9849
+    depends_on:
+      - mysql
     # 重启策略
     restart: always
     deploy:
@@ -138,19 +136,31 @@ services:
           memory: 386M
     environment:
       TZ: Asia/Shanghai
+      PREFER_HOST_MODE: hostname
       MODE: standalone
       SPRING_DATASOURCE_PLATFORM: mysql
       MYSQL_SERVICE_HOST: mysql
       MYSQL_SERVICE_PORT: 3306
       MYSQL_SERVICE_USER: root
       MYSQL_SERVICE_PASSWORD: root
-      MYSQL_SERVICE_DB_NAME: nacos
-      MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      # 启用鉴权
+      NACOS_AUTH_ENABLE: true
+      # JWT 签名密钥（生产环境必须修改为随机复杂字符串！）
+      NACOS_AUTH_IDENTITY_KEY: "nacos"
+      NACOS_AUTH_IDENTITY_VALUE: "nacos"
+      NACOS_AUTH_TOKEN: "VGhpcyBpcyBteSBjdXN0b20gc2VjcmV0IGtleSBmb3IgSldUIHNpZ25pbmcu"
+      # Token 过期时间（可选，默认 18000 秒）
+      NACOS_AUTH_TOKEN_EXPIRE_SECONDS: "18000"
       JVM_XMS: 256m
       JVM_XMX: 256m
       JVM_XMN: 16m
     volumes:
-      - ./logs/:/home/nacos/logs
+      - ./logs:/home/nacos/logs
+      - ./data:/home/nacos/data
+    networks:
+      - binghe-network
 
   rocketmqConsole:
     image: candice0630/rocketmq-console-ng:2.0
@@ -200,5 +210,25 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
       - SERVER_PORT=9090
+    networks:
+      - binghe-network
+
+  seata-server:
+    image: seataio/seata-server:1.7.1-slim
+    container_name: seata-server
+    ports:
+      - "7091:7091"
+      - "8091:8091"
+    environment:
+      - SEATA_IP=seata-server
+      - SEATA_PORT=8091
+    volumes:
+      - "/usr/share/zoneinfo/Asia/Shanghai:/etc/localtime"        #设置系统时区
+      - "/usr/share/zoneinfo/Asia/Shanghai:/etc/timezone"  #设置时区
+      - "/opt/seata/resources:/seata-server/resources"
+    restart: always
+    depends_on:
+      - mysql
+      - nacos
     networks:
       - binghe-network

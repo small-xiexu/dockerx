@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/big-market/big_market.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/big-market/big_market_01.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/big-market/big_market_02.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/nacos/nacos_init.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_activity_init.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_goods_init.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_init.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_order.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_order_0.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_order_1.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_order_2.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_reservation_0.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_reservation_1.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_reservation_2.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_reservation_init.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_stock_0_init.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_stock_1_init.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/environment/config/mysql/init/seckill/seckill_user.sql" dialect="MySQL" />
+  </component>
+</project>
