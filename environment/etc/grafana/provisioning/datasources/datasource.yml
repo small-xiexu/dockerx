@@ -1,0 +1,16 @@
+# Grafana 官方定义的 schema 版本，一般用1就行了
+apiVersion: 1
+
+# 数据源配置列表，可以配多个数据源
+datasources:
+  # 这个数据源的名字，在 Grafana 面板里会显示出来。比如选择数据源时你会看到 “Prometheus”。
+  - name: Prometheus
+    # 数据源类型，这里是 Prometheus（Grafana 内置支持）。
+    type: prometheus
+    # Grafana 服务器作为代理去请求 Prometheus。
+    access: proxy
+    # Prometheus 的访问地址。
+    # 这里假设 Grafana 容器和 Prometheus 容器在同一个 Docker 网络里，所以可以直接用服务名 prometheus 访问。
+    url: http://prometheus:9090
+    # 设置为默认数据源
+    isDefault: true

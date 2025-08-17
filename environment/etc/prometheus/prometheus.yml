@@ -1,0 +1,15 @@
+# 全局配置
+global:
+  # Prometheus 默认每隔 15 秒去目标应用抓取一次监控指标
+  scrape_interval: 15s
+
+# 采集配置，定义 Prometheus 去哪里、以什么方式抓数据
+scrape_configs:
+  # 给这组采集任务取的名字，方便在 Prometheus 和 Grafana 里区分
+  - job_name: 'xfg-dev-tech'
+    # 指标数据的访问路径。Spring Boot 应用如果集成了 spring-boot-starter-actuator
+    # 并启用了 micrometer-registry-prometheus，通常会提供这个接口。
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      # Prometheus 需要去采集的目标地址（IP + 端口）。这里意思是去访问 http://127.0.0.1:8091/actuator/prometheus。
+      - targets: [ '127.0.0.1:8091' ]
