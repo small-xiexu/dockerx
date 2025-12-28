@@ -46,6 +46,7 @@ services:
     command: sh mqnamesrv
     networks:
       - binghe-network
+
   rmqbroker:
     image: apache/rocketmq:5.3.1
     container_name: rmqbroker
@@ -268,3 +269,70 @@ services:
       - prometheus
     volumes:
       - ./etc/grafana:/etc/grafana
+
+  # canal-server 伪装成mysql的从库
+  # docker cp canal-server:/home/admin/canal-server/conf/example/instance.properties /Users/xiaofuge/Documents/develop/github/xfg-studio/xfg-dev-tech-canal/docs/dev-ops/canal
+  canal-server:
+    image: canal/canal-server:v1.1.7
+    container_name: canal-server
+    restart: unless-stopped
+    ports:
+      - "11111:11111"
+    volumes:
+      - ./canal/instance.properties:/home/admin/canal-server/conf/example/instance.properties
+    depends_on:
+      - mysql
+    networks:
+      - binghe-network
+
+  # canal-adapter 负责数据分发
+  # docker cp canal-adapter:/opt/canal-adapter/conf/application.yml /Users/xiaofuge/Documents/develop/github/xfg-studio/xfg-dev-tech-canal/docs/dev-ops/canal-adapter
+  # docker cp canal-adapter:/opt/canal-adapter/conf/rdb/mytest_user.yml /Users/xiaofuge/Documents/develop/github/xfg-studio/xfg-dev-tech-canal/docs/dev-ops/canal-adapter/rdb
+  canal-adapter:
+    image: coopersoft/canal-adapter:v1.1.6
+    container_name: canal-adapter
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    volumes:
+      - ./canal-adapter/application.yml:/opt/canal-adapter/conf/application.yml
+      - ./canal-adapter/es7:/opt/canal-adapter/conf/es7
+    depends_on:
+      - canal-server
+    networks:
+      - binghe-network
+
+  # 模型服务
+  ollama:
+    image: ollama/ollama:0.5.10
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+
+  vector_db:
+    image: pgvector/pgvector:pg16
+    container_name: vector_db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=springai
+      - PGPASSWORD=postgres
+    volumes:
+      - ./pgvector/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: "pg_isready -U postgres -d springai"
+      interval: 2s
+      timeout: 20s
+      retries: 10
+    networks:
+      - binghe-network

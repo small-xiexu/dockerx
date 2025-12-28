@@ -12,4 +12,4 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     static_configs:
       # Prometheus 需要去采集的目标地址（IP + 端口）。这里意思是去访问 http://127.0.0.1:8091/actuator/prometheus。
-      - targets: [ '127.0.0.1:8091' ]
+      - targets: [ '192.168.18.194:8091' ]
