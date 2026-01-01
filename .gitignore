@@ -1,3 +1,4 @@
 /environment/logs/
 /environment/data/
-/.idea/
+.idea/
+environment/ollama_data/
