@@ -257,6 +257,8 @@ services:
       - 9090:9090
     volumes:
       - ./etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - binghe-network
 
   # 监控界面
   grafana:
@@ -269,6 +271,8 @@ services:
       - prometheus
     volumes:
       - ./etc/grafana:/etc/grafana
+    networks:
+      - binghe-network
 
   # canal-server 伪装成mysql的从库
   # docker cp canal-server:/home/admin/canal-server/conf/example/instance.properties /Users/xiaofuge/Documents/develop/github/xfg-studio/xfg-dev-tech-canal/docs/dev-ops/canal
@@ -311,6 +315,8 @@ services:
       - "11434:11434"
     volumes:
       - ./ollama_data:/root/.ollama
+    networks:
+      - binghe-network
 
   vector_db:
     image: pgvector/pgvector:pg16
