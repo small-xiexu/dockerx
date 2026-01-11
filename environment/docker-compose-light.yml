@@ -3,7 +3,7 @@ version: '3.8'
 networks:
   binghe-network:
     name: binghe-network
-    driver: bridge
+    external: true
 
 volumes:
   prometheus_data: { }
@@ -190,7 +190,7 @@ services:
       RABBITMQ_DEFAULT_PASS: admin
     command: rabbitmq-server
     volumes:
-      - /opt/rabbitmq/data:/var/lib/rabbitmq
+      - ./data/rabbitmq:/var/lib/rabbitmq
     networks:
       - binghe-network
 
@@ -226,7 +226,7 @@ services:
     volumes:
       - "/usr/share/zoneinfo/Asia/Shanghai:/etc/localtime"        #设置系统时区
       - "/usr/share/zoneinfo/Asia/Shanghai:/etc/timezone"  #设置时区
-      - "/opt/seata/resources:/seata-server/resources"
+      - "./config/seata/resources:/seata-server/resources"
     restart: always
     depends_on:
       - mysql

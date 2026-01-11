@@ -1,0 +1,17 @@
+# Docker 数据目录（不同步实际数据，只同步目录结构）
+data/db_data/
+data/rocketmq/
+data/rabbitmq/
+data/nacos/
+
+# 日志文件
+logs/
+*.log
+
+# Ollama 模型数据（文件很大）
+ollama_data/
+
+# 临时文件
+*.tmp
+*.swp
+.DS_Store
