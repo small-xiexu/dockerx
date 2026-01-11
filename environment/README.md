@@ -5,6 +5,7 @@
 ## 📋 目录
 
 - [快速开始](#快速开始)
+- [数据持久化说明](#数据持久化说明)
 - [Docker 基础知识](#docker-基础知识)
 - [网络配置](#网络配置)
 - [服务列表](#服务列表)
@@ -17,14 +18,24 @@
 ## 🚀 快速开始
 
 ### 前置要求
-- Docker Desktop for Mac 或 OrbStack
+- **Docker 环境**（二选一）：
+  - [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) - 官方客户端
+  - [OrbStack](https://orbstack.dev/) - 推荐 Mac 用户使用，更轻量快速
 - 至少 8GB 可用内存
 
-> **💡 提示**：本项目支持 Docker Desktop 和 OrbStack。OrbStack 是一个更轻量、更快速的 Docker 替代方案，推荐 Mac 用户使用。
+> **💡 不知道怎么安装 Docker？**
+> 
+> 如果你是 Mac 用户，推荐直接下载 [OrbStack](https://orbstack.dev/)，它比 Docker Desktop 更快、更省资源。安装后双击打开即可使用，无需额外配置。
 
 ### 启动所有服务
 ```bash
-cd /path/to/environment
+# 1. 进入项目目录（根据你的实际路径修改）
+cd ~/dockerx/environment
+
+# 2. 首次使用需要创建 Docker 网络（只需执行一次）
+docker network create binghe-network
+
+# 3. 启动所有服务
 docker-compose -f docker-compose-light.yml up -d
 ```
 
@@ -41,6 +52,114 @@ docker-compose -f docker-compose-light.yml up -d nacos
 ```bash
 docker-compose -f docker-compose-light.yml down
 ```
+
+---
+
+## 💾 数据持久化说明
+
+> **什么是数据持久化？**
+> 
+> 简单来说，就是容器里的数据会不会保存到你的电脑上。如果做了持久化，即使删除容器，数据还在；如果没做持久化，删除容器后数据就丢了。
+
+### 一句话总结
+
+- ✅ **数据会保留**：容器删了，数据还在你电脑上
+- ❌ **数据不保留**：容器删了，数据也跟着没了
+
+---
+
+### 📊 各服务数据持久化汇总表
+
+| 服务 | 数据会保留吗？ | 保存位置 | 通俗解释 |
+|------|:-------------:|----------|----------|
+| **MySQL** | ✅ 会保留 | `./data/db_data/` | 你的数据库表和数据都保存在电脑上，放心使用 |
+| **Redis** | ❌ **不保留** | 无 | 缓存数据会丢失，但 Redis 本来就是用来做缓存的，丢了问题不大 |
+| **Nacos** | ✅ 会保留 | `./logs/`、`./data/` | 注册的服务信息和配置都会保留 |
+| **RocketMQ** | ✅ 会保留 | `./data/rocketmq/` | 消息队列中的消息会保留 |
+| **RabbitMQ** | ✅ 会保留 | `./data/rabbitmq/` | 消息队列中的消息会保留 |
+| **Elasticsearch** | ❌ **不保留** | 无 | 索引数据会丢失！如有重要数据，需要额外配置 |
+| **Kibana** | ❌ 不保留 | 无 | 只是个可视化界面，没有需要保留的数据 |
+| **Logstash** | ❌ 不保留 | 无 | 只是日志管道，不存储数据 |
+| **Sentinel** | ❌ **不保留** | 无 | 流控规则会丢失，需要重新配置 |
+| **XXL-Job** | ✅ 会保留 | 数据存在 MySQL 中 | 定时任务配置保存在 MySQL，不用担心 |
+| **Seata** | ✅ 会保留 | 数据存在 MySQL 中 | 事务日志保存在 MySQL，不用担心 |
+| **Zookeeper** | ❌ **不保留** | 无 | 协调数据会丢失，但开发环境影响不大 |
+| **Prometheus** | ❌ **不保留** | 无 | 历史监控数据会丢失 |
+| **Grafana** | ❌ **不保留** | 无 | Dashboard 配置会丢失，建议导出备份 |
+| **Canal Server** | ❌ 不保留 | 无 | 只是 binlog 解析器，不存储数据 |
+| **Canal Adapter** | ❌ 不保留 | 无 | 只是数据适配器，不存储数据 |
+| **Ollama** | ✅ 会保留 | `./ollama_data/` | 下载的 AI 模型会保留，不用重复下载 |
+| **Vector DB** | ❌ **不保留** | 无 | ⚠️ 向量数据会丢失！AI 应用的知识库数据会没！ |
+
+---
+
+### 🚨 风险提醒（必读！）
+
+下面这些服务的数据 **没有配置持久化**，容器删除后数据会丢失：
+
+#### ⚠️ 高风险（可能影响开发工作）
+
+| 服务 | 丢失的内容 | 影响程度 | 建议 |
+|------|-----------|:--------:|------|
+| **Vector DB** | 向量数据（AI 知识库） | 🔴 严重 | 如用于生产，建议添加数据挂载 |
+| **Elasticsearch** | 全部索引数据 | 🔴 严重 | 如有重要数据，建议添加数据挂载 |
+| **Grafana** | Dashboard 配置 | 🟡 中等 | 建议定期导出 Dashboard JSON |
+| **Sentinel** | 流控规则 | 🟡 中等 | 建议规则配置持久化到 Nacos |
+
+#### ⚪ 低风险（开发环境可接受）
+
+| 服务 | 丢失的内容 | 说明 |
+|------|-----------|------|
+| **Redis** | 缓存数据 | 缓存本来就是临时的，丢了没关系 |
+| **Zookeeper** | 协调数据 | 重启后会自动恢复 |
+| **Prometheus** | 历史指标 | 监控数据丢失，不影响功能 |
+
+---
+
+### 🛠️ 如何添加数据持久化？
+
+如果你需要让某个服务的数据也保留，可以修改 `docker-compose-light.yml` 文件，添加 `volumes` 配置。
+
+**举个例子 —— 给 Vector DB 添加数据持久化：**
+
+```yaml
+# 修改前（数据不保留）
+vector_db:
+  image: pgvector/pgvector:pg16
+  # ... 其他配置
+
+# 修改后（数据会保留）
+vector_db:
+  image: pgvector/pgvector:pg16
+  volumes:
+    - ./data/vector_db:/var/lib/postgresql/data   # 添加这一行
+  # ... 其他配置
+```
+
+**解释**：
+- `./data/vector_db`：你电脑上的目录（会自动创建）
+- `/var/lib/postgresql/data`：PostgreSQL 在容器里存数据的位置
+- 加了这行后，数据库的数据就会保存到你电脑的 `./data/vector_db` 目录
+
+---
+
+### ❓ 常见问题
+
+**Q：我删除容器用的是 `docker-compose down`，数据会丢吗？**
+
+A：不会！`docker-compose down` 只删除容器，不删除挂载的数据。只有手动删除 `./data/` 目录才会丢失数据。
+
+**Q：我用的是 `docker-compose down -v`，数据会丢吗？**
+
+A：`-v` 参数会删除 Docker 管理的数据卷，但不会删除我们用相对路径挂载的目录（如 `./data/`）。所以挂载目录里的数据还在。
+
+**Q：为什么 Redis 不配置持久化？**
+
+A：Redis 主要用于缓存，缓存数据本来就是临时的，丢了可以从数据库重新加载。对于开发环境来说，不配置持久化是正常的。
+
+**Q：我的 AI 应用数据很重要，怎么保护 Vector DB？**
+
+A：参考上面的例子，在 `docker-compose-light.yml` 中给 `vector_db` 添加 volumes 配置，把数据目录挂载出来。
 
 ---
 
@@ -209,23 +328,23 @@ docker network create binghe-network
 - **RabbitMQ 3.12.0** - 消息中间件
 
 ### 日志 & 监控
-- **Elasticsearch 7.14.2** - 搜索引擎
-- **Logstash 7.14.2** - 日志收集
-- **Kibana 7.14.2** - 日志可视化
-- **Prometheus 2.47.2** - 监控数据采集
-- **Grafana 10.2.0** - 监控可视化
-- **Sentinel** - 流量控制
+- **Elasticsearch 7.14.2** - 搜索引擎（存储和检索日志数据）
+- **Logstash 7.14.2** - 日志收集（把各种日志收集到 Elasticsearch）
+- **Kibana 7.14.2** - 日志可视化（网页界面查看和分析日志）
+- **Prometheus 2.47.2** - 监控数据采集（收集各服务的指标数据）
+- **Grafana 10.2.0** - 监控可视化（把监控数据画成图表）
+- **Sentinel** - 流量控制（防止服务被压垂，类似“保险丝”）
 
 ### 分布式事务 & 任务调度
-- **Seata Server 1.7.1** - 分布式事务
-- **XXL-Job 2.4.0** - 分布式任务调度
+- **Seata Server 1.7.1** - 分布式事务（解决多个服务之间的数据一致性问题）
+- **XXL-Job 2.4.0** - 分布式任务调度（定时任务管理平台，类似“定时闹钟”）
 
 ### 数据同步
-- **Canal Server 1.1.7** - MySQL binlog 解析
-- **Canal Adapter 1.1.6** - 数据同步适配器
+- **Canal Server 1.1.7** - MySQL binlog 解析（监听数据库变化，实现数据实时同步）
+- **Canal Adapter 1.1.6** - 数据同步适配器（把 Canal 解析的数据同步到 ES 等系统）
 
 ### 协调服务
-- **Zookeeper 3.9.0** - 分布式协调服务
+- **Zookeeper 3.9.0** - 分布式协调服务（用于服务发现、配置管理、分布式锁等）
 
 ### AI 服务
 - **Ollama 0.5.10** - 本地大语言模型服务
@@ -256,6 +375,14 @@ docker network create binghe-network
 | Canal Adapter | 8082 | http://localhost:8082 | - |
 | Ollama | 11434 | http://localhost:11434 | - |
 | Vector DB | 5432 | localhost:5432 | postgres/postgres |
+
+> **⚠️ 端口冲突提醒**
+> 
+> 表格中 **XXL-Job** 和 **Prometheus** 都显示为 9090 端口，但在 `docker-compose-light.yml` 中它们实际使用不同端口：
+> - XXL-Job：`9090:9090`
+> - Prometheus：`19090:9090`（容器内 9090，映射到主机 19090）
+> 
+> 如果你遇到端口冲突，请检查 `docker-compose-light.yml` 文件中的实际端口配置。
 
 ---
 
@@ -608,7 +735,7 @@ environment/
 
 **依赖服务**：mysql
 
-**说明**：Canal 伪���成 MySQL 的从库，实时解析 binlog
+**说明**：Canal 伪装成 MySQL 的从库，实时解析 binlog，用于数据同步场景（如同步数据到 Elasticsearch）
 
 ---
 
