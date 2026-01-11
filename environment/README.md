@@ -53,6 +53,32 @@ docker-compose -f docker-compose-light.yml up -d nacos
 docker-compose -f docker-compose-light.yml down
 ```
 
+### ✅ 启动成功验证
+
+启动完成后，你可以通过以下方式验证服务是否正常运行：
+
+**1. 查看容器状态**：
+```bash
+docker-compose -f docker-compose-light.yml ps
+```
+如果看到所有服务状态都是 `Up` 或 `running`，说明启动成功！
+
+**2. 访问 Web 界面验证**（选择一个试试）：
+- 🟢 **Nacos**：打开 http://localhost:8848/nacos ，用 `nacos/nacos` 登录
+- 🟢 **RabbitMQ**：打开 http://localhost:15672 ，用 `admin/admin` 登录
+- 🟢 **Grafana**：打开 http://localhost:4000 ，用 `admin/admin` 登录
+
+如果能看到登录页面，恭喜你，环境搭建成功！🎉
+
+**3. 如果启动失败**：
+```bash
+# 查看出错的服务日志
+docker-compose -f docker-compose-light.yml logs [服务名]
+
+# 例如查看 mysql 的日志
+docker-compose -f docker-compose-light.yml logs mysql
+```
+
 ---
 
 ## 💾 数据持久化说明
@@ -805,16 +831,10 @@ environment/
 
 ## 📝 使用说明
 
-### 1. 首次使用
+### 1. 查看服务状态
 
 ```bash
-# 1. 创建网络
-docker network create binghe-network
-
-# 2. 启动所有服务
-docker-compose -f docker-compose-light.yml up -d
-
-# 3. 查看服务状态
+# 查看所有容器状态
 docker-compose -f docker-compose-light.yml ps
 ```
 
@@ -879,8 +899,10 @@ docker-compose -f docker-compose-light.yml restart [服务名]
 ### 6. 日志管理
 
 #### 日志文件位置
-- `./logs/` - Nacos 日志（247MB+）
+- `./logs/` - Nacos 日志
 - `./data/rocketmq/logs/` - RocketMQ 日志
+
+> **💡 小提示**：日志文件可能会越来越大（比如 100MB+），这是**正常现象**，不用担心。如果磁盘空间紧张，可以按下面方法清理。
 
 #### 自动清理日志（推荐）
 
