@@ -2,3 +2,4 @@
 /environment/data/
 .idea/
 environment/ollama_data/
+.claude/settings.local.json
