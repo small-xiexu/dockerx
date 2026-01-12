@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   binghe-network:
     name: binghe-network
@@ -256,7 +254,7 @@ services:
     ports:
       - 9090:9090
     volumes:
-      - ./etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - binghe-network
 
@@ -270,7 +268,7 @@ services:
     depends_on:
       - prometheus
     volumes:
-      - ./etc/grafana:/etc/grafana
+      - ./config/grafana:/etc/grafana
     networks:
       - binghe-network
 
@@ -283,7 +281,7 @@ services:
     ports:
       - "11111:11111"
     volumes:
-      - ./canal/instance.properties:/home/admin/canal-server/conf/example/instance.properties
+      - ./config/canal/instance.properties:/home/admin/canal-server/conf/example/instance.properties
     depends_on:
       - mysql
     networks:
@@ -299,8 +297,8 @@ services:
     ports:
       - "8082:8081"
     volumes:
-      - ./canal-adapter/application.yml:/opt/canal-adapter/conf/application.yml
-      - ./canal-adapter/es7:/opt/canal-adapter/conf/es7
+      - ./config/canal-adapter/application.yml:/opt/canal-adapter/conf/application.yml
+      - ./config/canal-adapter/es7:/opt/canal-adapter/conf/es7
     depends_on:
       - canal-server
     networks:
@@ -314,7 +312,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ./ollama_data:/root/.ollama
+      - ./data/ollama:/root/.ollama
     networks:
       - binghe-network
 
@@ -340,5 +338,22 @@ services:
       interval: 2s
       timeout: 20s
       retries: 10
+    networks:
+      - binghe-network
+
+  # pg 管理工具
+  pgadmin:
+    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/pgadmin4:9.1.0
+    container_name: vector_db_admin
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: sj15814963053@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    depends_on:
+      - vector_db
     networks:
       - binghe-network
