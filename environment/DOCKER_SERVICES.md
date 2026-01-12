@@ -395,18 +395,13 @@ docker network create binghe-network
 | XXL-Job | 9090 | http://localhost:9090/xxl-job-admin | admin/123456 |
 | Seata Server | 7091, 8091 | localhost:8091 | - |
 | Zookeeper | 2181 | localhost:2181 | - |
-| Prometheus | 9090 | http://localhost:9090 | - |
+| Prometheus | 19090 | http://localhost:19090 | - |
 | Grafana | 4000 | http://localhost:4000 | admin/admin |
 | Canal Server | 11111 | localhost:11111 | - |
 | Canal Adapter | 8082 | http://localhost:8082 | - |
 | Ollama | 11434 | http://localhost:11434 | - |
 | Vector DB | 5432 | localhost:5432 | postgres/postgres |
-
-> **⚠️ 端口冲突提醒**
-> 
-> 表格中 **XXL-Job** 和 **Prometheus** 都显示为 9090 端口，但在 `docker-compose-light.yml` 中它们实际使用不同端口：
-> - XXL-Job：`9090:9090`
-> - Prometheus：`19090:9090`（容器内 9090，映射到主机 19090）
+| pgAdmin | 5050 | http://localhost:5050 | sj15814963053@gmail.com/admin |
 > 
 > 如果你遇到端口冲突，请检查 `docker-compose-light.yml` 文件中的实际端口配置。
 

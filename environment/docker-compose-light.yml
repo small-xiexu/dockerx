@@ -69,6 +69,7 @@ services:
     container_name: elasticsearch
     volumes:
       - ./config/elk/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./data/elasticsearch:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -252,7 +253,7 @@ services:
     container_name: prometheus
     restart: always
     ports:
-      - 9090:9090
+      - 19090:9090
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
@@ -269,6 +270,7 @@ services:
       - prometheus
     volumes:
       - ./config/grafana:/etc/grafana
+      - ./data/grafana:/var/lib/grafana
     networks:
       - binghe-network
 
@@ -327,6 +329,7 @@ services:
       - PGPASSWORD=postgres
     volumes:
       - ./config/pgvector/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data/vector_db:/var/lib/postgresql/data
     logging:
       options:
         max-size: 10m
