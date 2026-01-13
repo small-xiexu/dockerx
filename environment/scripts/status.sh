@@ -13,7 +13,7 @@ echo ""
 
 # AI 开发环境服务
 echo "🤖 AI 开发环境："
-AI_SERVICES="redis ollama vector_db pgadmin"
+AI_SERVICES="redis ollama vector_db vector_db_admin"
 for service in $AI_SERVICES; do
     if docker ps --format '{{.Names}}' | grep -q "^${service}$"; then
         status=$(docker ps --filter "name=^${service}$" --format "{{.Status}}")
