@@ -44,9 +44,12 @@ docker-compose -f docker-compose-light.yml up -d
 # 启动 MySQL 和 Redis
 docker-compose -f docker-compose-light.yml up -d mysql redis
 
-# 启动 Nacos（会自动启动依赖的 MySQL）
-docker-compose -f docker-compose-light.yml up -d nacos
+# 启动 Nacos（推荐，只走这个入口）
+./scripts/start-nacos.sh
 ```
+
+> Nacos 不建议再直接执行 `docker-compose -f docker-compose-light.yml up -d nacos`。
+> 正确入口是 `./scripts/start-nacos.sh`，它会按顺序启动 MySQL、临时初始化 `nacos_config`、再启动 Nacos，并且不会保留退出态的一次性初始化容器。
 
 ### 停止所有服务
 ```bash
@@ -527,6 +530,14 @@ environment/
 - `./data:/home/nacos/data` - 数据目录
 
 **依赖服务**：mysql
+
+**推荐启动方式**：
+- `./scripts/start-nacos.sh`
+
+**说明**：
+- 该脚本会先启动 MySQL，再用临时容器幂等初始化 `nacos_config`，最后启动 Nacos
+- 初始化容器使用 `run --rm`，执行完成后会自动删除，不会在 Docker Desktop 中留下退出态容器
+- 如果直接单独启动 `nacos` 服务，可能跳过初始化步骤；请优先使用脚本入口
 
 **访问地址**：http://localhost:8848/nacos
 **默认账号**：nacos/nacos

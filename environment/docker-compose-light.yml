@@ -20,8 +20,35 @@ services:
     ]
     environment:
       MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h127.0.0.1 -uroot -proot --silent" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
     ports:
       - 3306:3306
+    networks:
+      - binghe-network
+
+  nacos-db-init:
+    image: mysql:8.0.32
+    profiles:
+      - manual-init
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: nacos_config
+      NACOS_INIT_SQL: /init-sql/nacos_init.sql
+    volumes:
+      - ./config/mysql/init/nacos:/init-sql:ro
+    command: [ "sh", "/init-sql/init-nacos-db.sh" ]
     networks:
       - binghe-network
 
@@ -125,7 +152,8 @@ services:
       - 9848:9848
       - 9849:9849
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     # 重启策略
     restart: always
     deploy:
