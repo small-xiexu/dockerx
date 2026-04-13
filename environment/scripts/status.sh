@@ -36,6 +36,18 @@ for service in $DEV_SERVICES; do
 done
 
 echo ""
+echo "🌐 Sub2API 网关："
+SUB2API_SERVICES="sub2api"
+for service in $SUB2API_SERVICES; do
+    if docker ps --format '{{.Names}}' | grep -q "^${service}$"; then
+        status=$(docker ps --filter "name=^${service}$" --format "{{.Status}}")
+        echo "  ✅ $service - $status"
+    else
+        echo "  ⭕ $service - 未运行"
+    fi
+done
+
+echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # 统计运行中的容器

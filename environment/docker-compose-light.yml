@@ -372,6 +372,50 @@ services:
     networks:
       - binghe-network
 
+  # AI API 网关 - 管理和分发 AI 订阅配额
+  # 管理后台: http://127.0.0.1:8888  账号: admin / Xx283619.
+  sub2api:
+    image: weishaw/sub2api:latest
+    container_name: sub2api
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    environment:
+      TZ: Asia/Shanghai
+      AUTO_SETUP: "true"
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      SERVER_MODE: release
+      RUN_MODE: simple
+      # 数据库（复用 vector_db PostgreSQL 实例，独立 sub2api 数据库）
+      DATABASE_HOST: vector_db
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_DBNAME: sub2api
+      DATABASE_SSLMODE: disable
+      # Redis（复用现有 redis，DB 1 与其他服务隔离）
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 1
+      # 管理员账号（仅首次启动生效）
+      ADMIN_EMAIL: admin@admin.com
+      ADMIN_PASSWORD: Xx283619.
+      # 安全密钥（生产环境请替换为随机值：openssl rand -hex 32）
+      JWT_SECRET: "a3f8c2e1d4b7960527ae3f8c2e1d4b7960527ae3f8c2e1d4b7960527ae3f8c2"
+      TOTP_ENCRYPTION_KEY: "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+      # 允许访问内网地址（连接 vector_db / redis 等内网服务必须开启）
+      SECURITY_URL_ALLOWLIST_ALLOW_PRIVATE_HOSTS: "true"
+    volumes:
+      - ./data/sub2api:/app/data
+    depends_on:
+      vector_db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - binghe-network
+
   # pg 管理工具
   pgadmin:
     image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/pgadmin4:9.1.0

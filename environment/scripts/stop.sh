@@ -19,6 +19,9 @@ AI_SERVICES="redis ollama vector_db pgadmin"
 # 日常开发环境服务列表
 DEV_SERVICES="mysql redis"
 
+# Sub2API 服务列表
+SUB2API_SERVICES="sub2api"
+
 if [ $# -eq 0 ]; then
     # 没有参数，停止所有服务
     echo "🛑 停止所有服务..."
@@ -38,6 +41,13 @@ elif [ "$1" = "dev" ]; then
     docker-compose -f docker-compose-light.yml stop $DEV_SERVICES
     docker-compose -f docker-compose-light.yml rm -f $DEV_SERVICES
     echo "✅ 日常开发环境已停止"
+
+elif [ "$1" = "sub2api" ]; then
+    # 停止 Sub2API
+    echo "🛑 停止 Sub2API..."
+    docker-compose -f docker-compose-light.yml stop $SUB2API_SERVICES
+    docker-compose -f docker-compose-light.yml rm -f $SUB2API_SERVICES
+    echo "✅ Sub2API 已停止"
 
 else
     # 停止指定服务
